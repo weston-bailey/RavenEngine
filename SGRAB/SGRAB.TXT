@@ -1,0 +1,70 @@
+SGRAB DOCUMENTATION
+-------------------
+
+SGRAB [-s | -c] [-p] filename
+	-s	force seperate files
+	-c	force a composite .DAT file (default)
+	-p	wait for a keypress after each grab command
+
+
+Filename should be the root (no extension) of the picture (.LBM) to be
+grabbed.  The script file (.SCR) is read in and parsed, causing lumps to be
+grabbed off the screen and saved into an output data (.DAT) file.
+
+If the -s option is used, or the first command in the script file is
+$SEPERATE, the lumps are each saved to a seperate file, rather than being
+combined into a composite file.
+
+
+The script file format is as follows:
+
+[$SEPERATE]
+lumpname	grabcommand	[parameters]
+; Comments can be uses at the beginning of a line, or after a command's parms
+; whitespace can be introduced anywhere, but a command cannot cross lines
+
+
+
+If the lumps are being saved individually, lumpname can be any valid pathname,
+but for composite files it must be a filename[.ext] size.
+
+
+Current grab commands:
+
+GENERAL
+
+filename	RAW	x y width height
+	An unadorned raw block of pixels
+
+filename	PIC x y width height [orgx orgy [hitxl hityl hitxh hityh]]
+	A structured pic, with optional origin offsets and hit rectangles
+
+filename	LPIC x y width height [orgx orgy [hitxl hityl hitxh hityh]]
+	A linear VGA pic, with optional origin offsets
+
+filename	FONT startchar endchar [startchar endchar [...]]
+	A proportional font, possible skipping ranges of characters
+
+filename	PALETTE [startcolor endcolor]
+	The VGA palette, all 256 by default
+
+RAVEN ENGINE
+
+filename	WALL xblock yblock blockheight
+	Blocks are multiples of 8 pixels, implicit 8 block height
+
+filename	FLAT xblock yblock
+	Flat floors or ceilings, implicit 8 by 8 block size
+
+filename	DSCALE x y width height
+	Values in pixels, not blocks.
+
+LYNX
+
+filename	LYNXWALLS numtiles
+	Grabs numtiles 16*30 walls off the template screen
+
+filename	LYNXSCALE spot
+	Grabs a 64*60 lynx sprite from position spot (0-14) on the template screen
+
+

@@ -1,0 +1,149 @@
+todd3d.tod
+
+palette.dat     palette
+lights.dat      lights
+
+$OPENCOMP       map
+map1.dat        map
+map2.dat
+map3.dat
+map4.dat
+map5.dat
+map6.dat
+map7.dat
+map8.dat
+map9.dat
+map10.dat
+
+$OPENCOMP       playscr
+playscr.dat     playscreen
+
+$OPENCOMP       font1
+font1.dat       font
+
+;===============
+; rendering data
+;===============
+
+; sprites
+LABEL                   startsprites
+
+$OPENCOMP       sprite1
+sp1_1.dat       brazier
+sp1_2.dat
+sp1_3.dat
+sp1_4.dat
+
+$OPENCOMP       sprite2
+sp2_1.dat       chacmool
+
+$OPENCOMP       sprite3
+sp3_1.dat       snake
+
+$OPENCOMP       sprite4
+sp4_1.dat       urn1
+sp4_2.dat       urn2
+sp4_3.dat       bowl
+sp4_4.dat       cup
+sp4_5.dat       jade1
+sp4_6.dat       ankh
+
+$OPENCOMP       sprite5
+sp5_1.dat       atk1
+sp5_2.dat      
+sp5_3.dat
+sp5_4.dat       atk1_mx
+sp5_5.dat       exp1
+sp5_6.dat
+sp5_7.dat       exp1_mx
+
+LABEL                   endsprites
+
+$OPENCOMP       weapons
+weapons.dat     weapons
+
+
+
+; flat floors / ceilings
+LABEL                   startflats
+$OPENCOMP       flats1
+f1_1.dat                        ; Stone ceiling
+f1_2.dat                        ; wood floor
+f1_3.dat
+f1_4.dat
+f1_5.dat
+f1_6.dat
+f1_7.dat
+f1_8.dat
+$OPENCOMP       flats2 
+f2_1.dat
+f2_2.dat
+f2_3.dat
+f2_4.dat
+LABEL                   endflats
+
+
+; walls
+LABEL                   startwalls
+$OPENCOMP       walls1
+w1_1.dat
+w1_2.dat
+w1_3.dat
+w1_4.dat
+w1_5.dat
+w1_6.dat
+w1_7.dat
+w1_8.dat
+$OPENCOMP       walls2
+w1_9.dat
+w1_10.dat    
+w1_11.dat
+w1_12.dat    
+w1_13.dat
+w1_14.dat
+w1_15.dat
+w1_16.dat
+$OPENCOMP       walls3
+w1_17.dat
+w1_18.dat    
+w1_19.dat
+w1_20.dat    
+w1_21.dat
+w1_22.dat
+w1_23.dat
+w1_24.dat
+$OPENCOMP       walls4
+w1_25.dat
+w1_26.dat    
+w1_27.dat
+w1_28.dat    
+w1_29.dat
+w1_30.dat
+w1_31.dat
+w1_32.dat
+$OPENCOMP       walls5
+w1_33.dat
+w1_34.dat    
+w1_35.dat
+w1_36.dat    
+w1_37.dat
+w1_38.dat
+w1_39.dat
+w1_40.dat
+$OPENCOMP       walls6
+w1_41.dat
+w1_42.dat    
+w1_43.dat
+w1_44.dat    
+w1_45.dat
+w1_46.dat
+w1_47.dat
+w1_48.dat
+
+
+; doors (doors are the same data as walls)
+$OPENCOMP       doors1
+door1.dat                               wolfdoor
+door2.dat                               wooddoor
+
+LABEL                   endwalls

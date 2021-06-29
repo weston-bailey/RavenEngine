@@ -1,0 +1,20 @@
+..\sgrab\sgrab doors1
+..\sgrab\sgrab walls1
+..\sgrab\sgrab walls2
+..\sgrab\sgrab walls3
+..\sgrab\sgrab walls4
+..\sgrab\sgrab walls5
+..\sgrab\sgrab walls6
+..\sgrab\sgrab sprite1
+..\sgrab\sgrab sprite2
+..\sgrab\sgrab sprite3
+..\sgrab\sgrab sprite4
+..\sgrab\sgrab sprite5
+..\sgrab\sgrab flats1
+..\sgrab\sgrab flats2
+..\sgrab\sgrab playscr
+..\sgrab\sgrab weapons
+..\sgrab\sgrab font1
+..\sgrab\sgrab map
+..\lights\lights playscr.lbm 59
+..\idlink\idlink -b

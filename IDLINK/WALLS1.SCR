@@ -1,0 +1,6 @@
+COMPOSITE
+
+w1_1.dat                wall    2 2 10
+w1_2.dat                wall    11 2 6
+w1_3.dat                wall    20 2 8
+w1_4.dat                wall    29 2 12

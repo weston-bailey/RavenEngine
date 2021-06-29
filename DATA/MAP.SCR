@@ -1,0 +1,10 @@
+map1.dat        raw             0 0 64 64
+map2.dat        raw             64 0 64 64
+map3.dat        raw             128 0 64 64
+map4.dat        raw             192 0 64 64
+map5.dat        raw             256 0 64 64
+map6.dat        raw             0 64 64 64
+map7.dat        raw             64 64 64 64
+map8.dat        raw             128 64 64 64
+map9.dat        raw             192 64 64 64
+map10.dat       raw             0 64 64 64

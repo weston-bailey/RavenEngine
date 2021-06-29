@@ -1,0 +1,2001 @@
+#include <conio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <alloc.h>
+#include <string.h>
+#include <dos.h>
+#include <bios.h>
+#include "xlib_all.h"
+
+#define PROGRAM_GRAPHIX   "GRAPHIX.LBM"
+#define INTERFACE_SCREEN  "INTRFACE.LBM"
+#define DATA_FILE         "TODD3D.TOD"
+
+#define UP_KEY            72 + 256
+#define DOWN_KEY          80 + 256
+#define LEFT_KEY          75 + 256
+#define RIGHT_KEY         77 + 256
+
+#define GRID_MARK_COLOR   80
+
+#define MAP_VIEW_SIZE     16
+#define MAP_SIZE          64
+#define MAX_TILES         40
+#define MAP_LAYERS        5
+#define TILE_SIZE         12
+
+#define WEST_LAYER        0
+#define NORTH_LAYER       1
+#define FLOOR_LAYER       2
+#define CEILING_LAYER     3
+#define SPRITE_LAYER      4
+
+#define PIC_BASEX         227
+#define PIC_BASEY         133
+#
+
+#define AA_BASEX          4
+#define AA_BASEY          4
+#define AA_MAXX           195
+#define AA_MAXY           195
+
+#define MC_BASEX          254
+#define MC_BASEY          100
+#define MC_MAXX           303
+#define MC_MAXY           108
+#define MC_BGCOLOR        101
+#define MC_FGCOLOR        0
+
+#define DM_BASEX          214
+#define DM_BASEY          10
+#define DM_MAXX           304
+#define DM_MAXY           18
+#define DM_BGCOLOR        101
+#define DM_FGCOLOR        0
+
+#define IN_BASEX          214
+#define IN_BASEY          120
+#define IN_MAXX           304
+#define IN_MAXY           128
+#define IN_BGCOLOR        101
+#define IN_FGCOLOR        0
+
+#define LEFT_MOUSE_CLICK  1
+#define RIGHT_MOUSE_CLICK 2
+
+#define DM_NONE           0
+#define DM_WESTWALL       1
+#define DM_NORTHWALL      2
+#define DM_FLOOR          3
+#define DM_CEILING        4
+#define DM_SPRITE         5
+
+#define TT_WESTWALL       0
+#define TT_NORTHWALL      1
+#define TT_FLAT           2
+#define TT_ACTOR          3
+
+#define CC_NONE           0
+#define CC_WESTWALL       1
+#define CC_NORTHWALL      2
+#define CC_FLAT           3
+#define CC_FILL           4
+#define CC_DOOR           5
+#define CC_ACTOR          6
+#define CC_PLAYER         7
+
+#define DLG_OKAY          0
+#define DLG_CANCEL        1
+#define DLG_YES           2
+#define DLG_NO            3
+
+#define ID_OK             1
+#define ID_CANCEL         2
+#define ID_YES            4
+#define ID_NO             8
+#define ID_NOBUTTONS      16
+#define ID_NOTITLE        32
+#define ID_DEFAULT        1
+#define ID_OKAYCANCEL     3
+#define ID_YESNO          12
+
+#define FILL_BUTTON       0
+#define NEW_BUTTON        1
+#define LOAD_BUTTON       2
+#define SAVE_BUTTON       3
+#define EXIT_BUTTON       4
+#define EXTRA_BUTTON      5
+#define PIC_LEFT_BUTTON   6
+#define PIC_RIGHT_BUTTON  7
+
+#define WALL_BUTTON       8
+#define FLOOR_BUTTON      9
+#define CEILING_BUTTON    10
+#define TT4_BUTTON        11
+#define TT5_BUTTON        12
+#define PLAYER_BUTTON     13
+#define TT7_BUTTON        14
+#define SPRITE_BUTTON     15
+#define TT9_BUTTON        16
+#define TT10_BUTTON       17
+
+#define OKAY_BUTTON       18
+#define CANCEL_BUTTON     19
+#define YES_BUTTON        20
+#define NO_BUTTON         21
+
+#define END_OF_BUTTONS    22
+#define END_OF_MAIN_BUT   17
+#define END_OF_DLG_BUT    22
+
+#define START_MAIN_BUT    0
+#define START_DLG_BUT     18
+
+
+extern void showLBM(int,int,char*,long);
+
+void load_user_fonts(void);
+void exitfunc(void);
+
+void setUpInterface(void);
+void drawLoop(void);
+void handleUserActions(void);
+char MouseOnButton(char);
+void handleButton(char);
+void pushButton(char);
+void handleKeystroke(int);
+
+char MessageBox(int, int, long, char *, char *, int);
+void deactivateMainButtons(void);
+void activateMainButtons(void);
+void deactivateDlgButtons(void);
+void activateDlgButtons(void);
+
+void showDrawMode(void);
+void showItemName(void);
+void showCurrentPic(void);
+void showMouseCoords(int, int);
+
+void handleMouseCursor(void);
+void DrawGridTile(char xpos, char ypos);
+void RedrawMap();
+void RedrawRow(char whichRow);
+void RedrawCol(char whichCol);
+
+int  SaveMapToTOD(void);
+int  LoadMapFromTOD(void);
+int  SaveMapToFile(char *);
+int  LoadMapFromFile(char *);
+
+void ScaleTiles();
+
+void FillAnArea(char, char, char, char);
+
+typedef struct picStruct
+{
+  char *pbm;
+} picType;
+
+
+typedef struct scriptStruct
+{
+  char picFile[30];
+  char picName[20];
+  char Xoffset;
+  char Yoffset;
+} scriptType;
+
+scriptStruct scripts[37] =
+{
+  "WALLS1.LBM",
+  "W1_1",
+  2,
+  2,
+  "WALLS1.LBM",
+  "W1_2",
+  10,
+  2,
+  "WALLS1.LBM",
+  "W1_3",
+  18,
+  2,
+  "WALLS1.LBM",
+  "W1_4",
+  26,
+  2,
+  "WALLS1.LBM",
+  "W1_5",
+  2,
+  10,
+  "WALLS1.LBM",
+  "W1_6",
+  10,
+  10,
+  "WALLS1.LBM",
+  "W1_7",
+  18,
+  10,
+  "WALLS1.LBM",
+  "W1_8",
+  26,
+  10,
+  "WALLS2.LBM",
+  "W2_1",
+  2,
+  2,
+  "WALLS2.LBM",
+  "W2_2",
+  10,
+  2,
+  "WALLS2.LBM",
+  "W2_3",
+  18,
+  2,
+  "WALLS2.LBM",
+  "W2_4",
+  26,
+  2,
+  "WALLS2.LBM",
+  "W2_5",
+  2,
+  10,
+  "WALLS2.LBM",
+  "W2_6",
+  10,
+  10,
+  "WALLS2.LBM",
+  "W2_7",
+  18,
+  10,
+  "WALLS2.LBM",
+  "W2_8",
+  26,
+  10,
+  "WALLS3.LBM",
+  "W3_1",
+  2,
+  2,
+  "WALLS3.LBM",
+  "W3_2",
+  11,
+  2,
+  "WALLS3.LBM",
+  "W3_3",
+  20,
+  2,
+  "WALLS3.LBM",
+  "W3_4",
+  29,
+  2,
+  "WALLS3.LBM",
+  "W3_5",
+  2,
+  11,
+  "WALLS3.LBM",
+  "W3_6",
+  11,
+  11,
+  "WALLS3.LBM",
+  "W3_7",
+  20,
+  11,
+  "WALLS3.LBM",
+  "W3_8",
+  29,
+  11,
+  "FLATS1.LBM",
+  "F1_1",
+  2,
+  2,
+  "FLATS1.LBM",
+  "F1_2",
+  11,
+  2,
+  "FLATS1.LBM",
+  "F1_3",
+  20,
+  2,
+  "FLATS1.LBM",
+  "F1_4",
+  29,
+  2,
+  "FLATS1.LBM",
+  "F1_5",
+  2,
+  11,
+  "FLATS1.LBM",
+  "F1_6",
+  11,
+  11,
+  "FLATS1.LBM",
+  "F1_7",
+  20,
+  11,
+  "FLATS1.LBM",
+  "F1_8",
+  29,
+  11,
+  "ACTORS1.LBM",
+  "A1_1",
+  2,
+  2,
+  "ACTORS1.LBM",
+  "A1_2",
+  11,
+  2,
+  "ACTORS1.LBM",
+  "P1_1",
+  20,
+  2,
+  "ACTORS1.LBM",
+  "W1_1",
+  29,
+  2,
+  "ACTORS1.LBM",
+  "A1_3",
+  11,
+  11
+};
+
+char far *FillCursor[] =
+{ "THISISATEST!!!"};
+
+char far *userfnt1;
+char *FillPic = NULL;
+
+char IN_ACTIVE_AREA  = 0;
+char DONE_DRAWING    = 0;
+char FILL_ACTIVE     = 0;
+char UPDATE_PIC_LBM  = 1;
+char DRAW_FROM_PIC   = 1;
+char GRAPHIC_CURSOR  = 0;
+char CurrentDrawMode = DM_WESTWALL;
+char CurrentCursor   = CC_WESTWALL;
+char OldCursor       = CurrentCursor;
+char CurrentPic      = 0;
+char MinPic          = 0;
+char StartWallPic    = 0;
+char MaxWallPic      = 23;
+char MaxPic          = MaxWallPic;
+char StartFlatPic    = 24;
+char MaxFlatPic      = 31;
+char MaxScriptPic    = 36;
+char StartActorPic   = 32;
+char MaxActorPic     = 36;
+
+int  OldMouseX;
+int  OldMouseY;
+int  NewMouseX;
+int  NewMouseY;
+char GRIDX;
+char GRIDY;
+char FillStartX;
+char FillStartY;
+char GridBaseX = 0;
+char GridBaseY = 0;
+
+int  buttons[] =
+{
+  214, 73, 241, 81, 1,
+  214, 85, 241, 93, 1,
+  246, 73, 273, 81, 1,
+  246, 85, 273, 93, 1,
+  278, 73, 305, 81, 1,
+  278, 85, 305, 93, 1,
+  212, 133, 223, 144, 1,
+  294, 133, 305, 144, 1,
+
+  215, 32, 230, 47, 1,
+  233, 32, 248, 47, 1,
+  251, 32, 266, 47, 1,
+  269, 32, 284, 47, 1,
+  287, 32, 302, 47, 1,
+  215, 50, 230, 65, 1,
+  233, 50, 248, 65, 1,
+  251, 50, 266, 65, 1,
+  269, 50, 284, 65, 1,
+  287, 50, 302, 65, 1,
+
+  0, 0, 27, 8, 0,      // DIALOG BUTTONS
+  0, 9, 27, 17, 0,     // Start out at grab position in graphix file
+  0, 18, 27, 26, 0,    // Are filled in on the fly leter based on where
+  0, 27, 27, 35, 0,    //   dialog is to be shown
+
+  0, 0, 0, 0, 0
+};
+
+char *DrawModes[] =
+{
+  "DRAW INACTIVE",
+  "WEST WALL",
+  "NORTH WALL",
+  "FLOOR",
+  "CEILING",
+  "SPRITE PLACEMENT",
+  "",
+};
+
+char DialogButtons[4][300];
+char DrawCursors[7][146];
+char DrawBuffer[TILE_SIZE*TILE_SIZE+2];
+//char Pics[4][MAX_TILES][TILE_SIZE*TILE_SIZE+2];
+picStruct Pics[4][MAX_TILES];
+
+char map[MAP_LAYERS][MAP_SIZE*MAP_SIZE];
+
+void main(void)
+{
+  int i;
+  int j;
+
+  userfnt1 = (char far *) farmalloc(256*16+4);
+
+  x_text_mode();
+  x_set_mode(X_MODE_320x200,340);
+  x_text_init();
+  NonVisual_Offs += ScrnLogicalByteWidth * 14; // Fixes mouse droppings prob.
+  x_mouse_init();
+  MouseColor=103;
+  atexit(exitfunc);
+  load_user_fonts();
+  x_set_doublebuffer(200);
+
+  for (i=0; i < 4; i++)
+    for (j=0; j < MAX_TILES; j++)
+      Pics[i][j].pbm = (char *) malloc (TILE_SIZE*TILE_SIZE+2);
+
+  setUpInterface();
+
+  drawLoop();
+
+  for (i=0; i < 4; i++)
+    for (j=0; j < MAX_TILES; j++)
+      free(Pics[i][j].pbm);
+
+} // main
+
+void drawLoop(void)
+{
+  x_mouse_window(0, 0, 319, 199);
+
+  x_show_mouse();
+
+  while (!DONE_DRAWING)
+  {
+    handleUserActions();
+    handleMouseCursor();
+  } // while
+
+  x_hide_mouse();
+} // drawLoop
+
+void handleUserActions(void)
+{
+  char BUTTON_FOUND  = 0;
+  char currentButton;
+  int  currentKey;
+
+  if (MouseButtonStatus & LEFT_MOUSE_CLICK)
+  {
+    currentButton = 0;
+    while ((!BUTTON_FOUND) && (currentButton != END_OF_BUTTONS))
+    {
+      if ((MouseOnButton(currentButton)) &&
+	  (buttons[currentButton*5+4]))
+      {
+	handleButton(currentButton);
+	BUTTON_FOUND = 1;
+      } // if
+
+      currentButton++;
+    } // while
+  } // if
+  else if (bioskey(1))
+  {
+    currentKey = bioskey(0);
+    if (!(currentKey & 0xFF))
+      currentKey = (currentKey >> 8) + 256;
+    else
+      currentKey = currentKey & 0xFF;
+
+    handleKeystroke(currentKey);
+  } // else
+} // handleUserActions
+
+void handleKeystroke(int whichKey)
+{
+  switch (whichKey)
+  {
+    case UP_KEY :
+      if (GridBaseY > 0)
+      {
+	if (IN_ACTIVE_AREA)
+	  x_put_pbm(OldMouseX, OldMouseY, Page0_Offs, DrawCursors[0]);
+	else
+	  x_hide_mouse();
+
+	x_shift_rect(AA_BASEX, AA_BASEY,
+		     AA_MAXX-3, AA_MAXY-TILE_SIZE,
+		     AA_BASEX, AA_BASEY+TILE_SIZE, Page0_Offs);
+	GridBaseY--;
+	RedrawRow(0);
+	x_get_pbm(OldMouseX, OldMouseY, TILE_SIZE/4, TILE_SIZE, Page0_Offs, DrawCursors[0]);
+
+	if (IN_ACTIVE_AREA)
+	  x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	    DrawCursors[CurrentCursor]);
+	else
+	  x_show_mouse();
+
+	showMouseCoords((OldMouseX-4)/TILE_SIZE,(OldMouseY-4)/TILE_SIZE);
+      } // if
+      break;
+
+    case DOWN_KEY :
+      if (GridBaseY + MAP_VIEW_SIZE -1 < MAP_SIZE-1)
+      {
+	if (IN_ACTIVE_AREA)
+	  x_put_pbm(OldMouseX, OldMouseY, Page0_Offs, DrawCursors[0]);
+	else
+	  x_hide_mouse();
+
+	x_shift_rect(AA_BASEX, AA_BASEY+TILE_SIZE,
+		     AA_MAXX-3, AA_MAXY,
+		     AA_BASEX, AA_BASEY, Page0_Offs);
+	GridBaseY++;
+	RedrawRow(MAP_VIEW_SIZE-1);
+	x_get_pbm(OldMouseX, OldMouseY, TILE_SIZE/4, TILE_SIZE, Page0_Offs, DrawCursors[0]);
+
+	if (IN_ACTIVE_AREA)
+	  x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	    DrawCursors[CurrentCursor]);
+	else
+	  x_show_mouse();
+
+	showMouseCoords((OldMouseX-4)/TILE_SIZE,(OldMouseY-4)/TILE_SIZE);
+      } // if
+      break;
+
+    case LEFT_KEY :
+
+      if (GridBaseX > 0)
+      {
+	if (IN_ACTIVE_AREA)
+	  x_put_pbm(OldMouseX, OldMouseY, Page0_Offs, DrawCursors[0]);
+	else
+	  x_hide_mouse();
+	x_shift_rect(AA_BASEX, AA_BASEY, AA_MAXX-TILE_SIZE-3,
+		     AA_MAXY, AA_BASEX+TILE_SIZE, AA_BASEY, Page0_Offs);
+	GridBaseX--;
+	RedrawCol(0);
+	x_get_pbm(OldMouseX, OldMouseY, TILE_SIZE/4, TILE_SIZE, Page0_Offs, DrawCursors[0]);
+
+	if (IN_ACTIVE_AREA)
+	  x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	    DrawCursors[CurrentCursor]);
+	else
+	  x_show_mouse();
+
+	showMouseCoords((OldMouseX-4)/TILE_SIZE,(OldMouseY-4)/TILE_SIZE);
+      } // if
+      break;
+
+    case RIGHT_KEY :
+
+      if (GridBaseX + MAP_VIEW_SIZE - 1 < MAP_SIZE-1)
+      {
+	if (IN_ACTIVE_AREA)
+	  x_put_pbm(OldMouseX, OldMouseY, Page0_Offs, DrawCursors[0]);
+	else
+	  x_hide_mouse();
+	x_shift_rect(AA_BASEX+TILE_SIZE, AA_BASEY, AA_MAXX-3,
+		     AA_MAXY, AA_BASEX, AA_BASEY, Page0_Offs);
+	GridBaseX++;
+	RedrawCol(MAP_VIEW_SIZE-1);
+	x_get_pbm(OldMouseX, OldMouseY, TILE_SIZE/4, TILE_SIZE, Page0_Offs, DrawCursors[0]);
+
+	if (IN_ACTIVE_AREA)
+	  x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	    DrawCursors[CurrentCursor]);
+	else
+	  x_show_mouse();
+
+	showMouseCoords((OldMouseX-4)/TILE_SIZE,(OldMouseY-4)/TILE_SIZE);
+      } // if
+
+//      break;
+  } // switch
+} // handleKeyStroke
+
+void handleButton(char whichButton)
+{
+  pushButton(whichButton);
+
+  if (!MouseOnButton(whichButton))     // check if still modal to button
+    return;
+
+  switch (whichButton)
+  {
+    case EXIT_BUTTON :
+
+      if (MessageBox(160, 100, Page0_Offs, "Are you sure you want to exit?",
+		     "Last Chance", ID_YESNO) == ID_YES)
+	DONE_DRAWING = 1;
+
+      break;
+
+    case SAVE_BUTTON :
+      if (MessageBox(160, 100, Page0_Offs,
+		     "Do you want to save?",
+		     "", ID_YESNO | ID_NOTITLE) == ID_YES)
+      {
+	if (MessageBox(160, 100, Page0_Offs,
+		       "Do you want to insert\ninto .TOD file?",
+		       "", ID_YESNO | ID_NOTITLE) == ID_YES)
+	  SaveMapToTOD();
+	else
+	  SaveMapToFile("TODD.MAP");
+      } // if
+      break;
+
+    case LOAD_BUTTON :
+      if (MessageBox(160, 100, Page0_Offs,
+		     "Do you want to load?",
+		     "", ID_YESNO | ID_NOTITLE) == ID_YES)
+      {
+	if (MessageBox(160, 100, Page0_Offs,
+		       "Do you want to extract\nfrom .TOD file?",
+		       "", ID_YESNO | ID_NOTITLE) == ID_YES)
+	  LoadMapFromTOD();
+	else
+	  LoadMapFromFile("TODD.MAP");
+
+	RedrawMap();
+      } // if
+      break;
+
+    case EXTRA_BUTTON :
+
+      MessageBox(160, 100, Page0_Offs,
+		 "This button has no\nmeaning as of yet.", "", ID_OK | ID_NOTITLE);
+
+      break;
+
+    case FILL_BUTTON :
+
+      if (CurrentCursor == CC_FILL)
+	CurrentCursor = OldCursor;
+      else
+      {
+	OldCursor = CurrentCursor;
+	CurrentCursor = CC_FILL;
+      } // else
+
+      if (IN_ACTIVE_AREA)
+      {
+	x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,DrawCursors[0]);
+	x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	  DrawCursors[CurrentCursor]);
+      } // if
+
+      break;
+
+    case NEW_BUTTON :
+
+      if (MessageBox(160, 100, Page0_Offs,
+		 "Do you wish to start a\nnew map from scratch?",
+		 "Last Chance", ID_YESNO) == ID_YES)
+      {
+	memset(map, 0, MAP_LAYERS*MAP_SIZE*MAP_SIZE);
+	RedrawMap();
+      } // if
+
+      break;
+
+    case WALL_BUTTON :
+      if ((CurrentDrawMode != DM_WESTWALL) &&
+	  (CurrentDrawMode != DM_NORTHWALL))
+      {
+	MinPic = StartWallPic;
+	CurrentPic = StartWallPic;
+	MaxPic = MaxWallPic;
+
+	UPDATE_PIC_LBM = 1;
+
+	showCurrentPic();
+	showItemName();
+      } // if
+
+      if (CurrentDrawMode == DM_WESTWALL)
+      {
+	CurrentDrawMode = DM_NORTHWALL;
+	CurrentCursor = CC_NORTHWALL;
+      } // if
+      else
+      {
+	CurrentDrawMode = DM_WESTWALL;
+	CurrentCursor = CC_WESTWALL;
+      } // else
+      showDrawMode();
+
+      break;
+
+    case FLOOR_BUTTON :
+      CurrentDrawMode = DM_FLOOR;
+      CurrentCursor = CC_FLAT;
+      showDrawMode();
+
+      MinPic = StartFlatPic;
+      CurrentPic = StartFlatPic;
+      MaxPic = MaxFlatPic;
+
+      UPDATE_PIC_LBM = 1;
+
+      showCurrentPic();
+      showItemName();
+
+      break;
+
+    case CEILING_BUTTON :
+      CurrentDrawMode = DM_CEILING;
+      CurrentCursor = CC_FLAT;
+      showDrawMode();
+
+      MinPic = StartFlatPic;
+      CurrentPic = StartFlatPic;
+      MaxPic = MaxFlatPic;
+
+      UPDATE_PIC_LBM = 1;
+
+      showCurrentPic();
+      showItemName();
+      break;
+
+    case SPRITE_BUTTON :
+      CurrentDrawMode = DM_SPRITE;
+      CurrentCursor = CC_ACTOR;
+      showDrawMode();
+
+      MinPic = StartActorPic;
+      CurrentPic = StartActorPic;
+      MaxPic = MaxActorPic;
+
+      UPDATE_PIC_LBM = 1;
+
+      showCurrentPic();
+      showItemName();
+      break;
+
+    case TT4_BUTTON :
+    case TT5_BUTTON :
+    case TT7_BUTTON :
+    case TT9_BUTTON :
+    case TT10_BUTTON :
+
+      break;
+
+    case PIC_LEFT_BUTTON :
+      if (CurrentPic > MinPic)
+      {
+	if (stricmp(scripts[CurrentPic].picFile,scripts[CurrentPic-1].picFile))
+	  UPDATE_PIC_LBM = 1;
+	CurrentPic--;
+	showCurrentPic();
+	showItemName();
+      } // if
+      break;
+
+    case PIC_RIGHT_BUTTON :
+      if (CurrentPic < MaxPic)
+      {
+	if (stricmp(scripts[CurrentPic].picFile,scripts[CurrentPic+1].picFile))
+	  UPDATE_PIC_LBM = 1;
+	CurrentPic++;
+	showCurrentPic();
+	showItemName();
+      } // if
+      break;
+
+  } // switch
+} // handleButton
+
+void pushButton(char whichButton)
+{
+  char buttonBuffer[1000];
+  char BUTTON_DOWN = 1;
+
+  x_hide_mouse();
+
+  x_get_pbm(buttons[whichButton*5], buttons[whichButton*5+1],
+	    (buttons[whichButton*5+2] - buttons[whichButton*5] + 1) / 4,
+	    buttons[whichButton*5+3] - buttons[whichButton*5+1] + 1,
+	    Page0_Offs, buttonBuffer);
+  x_rect_fill(buttons[whichButton*5] - 1, buttons[whichButton*5+1] - 1,
+	      buttons[whichButton*5+2] + 2, buttons[whichButton*5+3] + 2,
+	      Page0_Offs, 0);
+  x_put_pbm(buttons[whichButton*5] + 1, buttons[whichButton*5+1] + 1,
+	    Page0_Offs, buttonBuffer);
+
+  x_show_mouse();
+
+  while (MouseButtonStatus & LEFT_MOUSE_CLICK)
+  {
+    if (BUTTON_DOWN)
+    {
+      if (!MouseOnButton(whichButton))
+      {
+	x_hide_mouse();
+	x_rect_fill(buttons[whichButton*5] - 1, buttons[whichButton*5+1] - 1,
+		    buttons[whichButton*5+2] + 2, buttons[whichButton*5+3] + 2,
+		    Page0_Offs, 0);
+	x_put_pbm(buttons[whichButton*5], buttons[whichButton*5+1],
+		  Page0_Offs, buttonBuffer);
+	x_show_mouse();
+
+	BUTTON_DOWN = 0;
+      } // if
+    } // if
+    else
+    {
+      if (MouseOnButton(whichButton))
+      {
+	x_hide_mouse();
+	x_rect_fill(buttons[whichButton*5] - 1, buttons[whichButton*5+1] - 1,
+		    buttons[whichButton*5+2] + 2, buttons[whichButton*5+3] + 2,
+		    Page0_Offs, 0);
+	x_put_pbm(buttons[whichButton*5] + 1, buttons[whichButton*5+1] + 1,
+		  Page0_Offs, buttonBuffer);
+	x_show_mouse();
+
+	BUTTON_DOWN = 1;
+      } // if
+    } // else
+  };
+
+  x_hide_mouse();
+
+  x_rect_fill(buttons[whichButton*5] - 1, buttons[whichButton*5+1] - 1,
+	      buttons[whichButton*5+2] + 2, buttons[whichButton*5+3] + 2,
+	      Page0_Offs, 0);
+  x_put_pbm(buttons[whichButton*5], buttons[whichButton*5+1],
+	    Page0_Offs, buttonBuffer);
+
+  x_show_mouse();
+} // pushButton
+
+char MouseOnButton(char whichButton)
+{
+  if ((MouseX >= buttons[whichButton*5]) &&
+      (MouseX <= buttons[whichButton*5+2]) &&
+      (MouseY >= buttons[whichButton*5+1]) &&
+      (MouseY <= buttons[whichButton*5+3]))
+    return 1;
+
+  return 0;
+} // MouseOnButton
+
+void handleOptionButtons(void)
+{
+} // handleOptionButtons
+
+void setUpInterface(void)
+{
+  memset(map, 0, MAP_LAYERS*MAP_SIZE*MAP_SIZE);
+  memset(Pics, 0, 4*MAX_TILES);
+
+  x_set_font(2);
+
+  x_page_flip(0, 0);
+
+  x_rect_fill(110, 80, 210, 120, Page1_Offs, 1);
+  x_printf(115, 95, Page1_Offs, 10, "Initializing MAZER...");
+
+  showLBM(0, 0, PROGRAM_GRAPHIX, Page0_Offs);
+  x_get_pbm(buttons[OKAY_BUTTON*5], buttons[OKAY_BUTTON*5+1],
+	    (buttons[OKAY_BUTTON*5+2] - buttons[OKAY_BUTTON*5] + 1) / 4,
+	    buttons[OKAY_BUTTON*5+3] - buttons[OKAY_BUTTON*5+1] + 1,
+	    Page0_Offs, DialogButtons[DLG_OKAY]);
+  x_get_pbm(buttons[CANCEL_BUTTON*5], buttons[CANCEL_BUTTON*5+1],
+	    (buttons[CANCEL_BUTTON*5+2] - buttons[CANCEL_BUTTON*5] + 1) / 4,
+	    buttons[CANCEL_BUTTON*5+3] - buttons[CANCEL_BUTTON*5+1] + 1,
+	    Page0_Offs, DialogButtons[DLG_CANCEL]);
+  x_get_pbm(buttons[YES_BUTTON*5], buttons[YES_BUTTON*5+1],
+	    (buttons[YES_BUTTON*5+2] - buttons[YES_BUTTON*5] + 1) / 4,
+	    buttons[YES_BUTTON*5+3] - buttons[YES_BUTTON*5+1] + 1,
+	    Page0_Offs, DialogButtons[DLG_YES]);
+  x_get_pbm(buttons[NO_BUTTON*5], buttons[NO_BUTTON*5+1],
+	    (buttons[NO_BUTTON*5+2] - buttons[NO_BUTTON*5] + 1) / 4,
+	    buttons[NO_BUTTON*5+3] - buttons[NO_BUTTON*5+1] + 1,
+	    Page0_Offs, DialogButtons[DLG_NO]);
+  x_get_pbm(0,45,TILE_SIZE/4,TILE_SIZE,Page0_Offs, DrawCursors[1]);
+  x_get_pbm(13,45,TILE_SIZE/4,TILE_SIZE,Page0_Offs, DrawCursors[2]);
+  x_get_pbm(26,45,TILE_SIZE/4,TILE_SIZE,Page0_Offs, DrawCursors[3]);
+  x_get_pbm(39,45,TILE_SIZE/4,TILE_SIZE,Page0_Offs, DrawCursors[4]);
+  x_get_pbm(52,45,TILE_SIZE/4,TILE_SIZE,Page0_Offs, DrawCursors[5]);
+  x_get_pbm(65,45, TILE_SIZE/4, TILE_SIZE, Page0_Offs, DrawCursors[6]);
+
+  ScaleTiles();
+
+  showLBM(0, 0, INTERFACE_SCREEN, Page0_Offs);
+
+  showDrawMode();
+  showItemName();
+
+  x_page_flip(0, 0);
+
+  showCurrentPic();
+} // setUpInterface
+
+void load_user_fonts(void)
+{
+  FILE *f;
+  f=fopen("smalthin.fnt","rb");
+  /* read char by char as fread wont read to far pointers in small model */
+  { int i; char c;
+	for (i=0;i<256*8+4;i++){
+	  fread(&c,1,1,f);
+	  *(userfnt1+i)=c;
+	}
+  }
+
+  fclose(f);
+
+  x_register_userfont(userfnt1);
+}
+
+void exitfunc(void){
+  x_mouse_remove();
+  x_text_mode();
+  printf("Ta-da\n");
+}
+
+char MessageBox(int baseX, int baseY,
+		long pageOffset, char * textMsg, char * titleMsg,
+		int buttonFlag)
+{
+  char Xoffset = 5;
+  char Yoffset = 5;
+  char TitleHeight = 10;
+  char TitleYoffset = 8;
+  char TextYoffset = 10;
+  char ButtonHeight = 9;
+  char ButtonWidth = 28;
+  int  ButtonStart = 0;
+  int  width = 100;
+  int  height = 50;
+  char showButtons;
+  char ActiveButton = 0;
+  char AlterButton = 0;
+
+  char *boxBG = NULL;
+
+  int defaultColors[] =
+  {
+    139, // basic color
+    154, // hilite color
+    144, // lolite color
+    79,  // title bar color
+    255, // text color
+    103  // title text color
+  };
+
+  int stringWidth;
+  int stringHeight;
+
+  char numButtons = 0;
+  char currentButton = 0;
+  char BUTTON_FOUND = 0;
+  char return_value = 0;
+
+
+  if ((x_strlen(textMsg) > x_strlen(titleMsg)) ||
+      (buttonFlag & ID_NOTITLE))
+    width = x_strlen(textMsg) + Xoffset * 2;
+  else
+    width = x_strlen(titleMsg) + Xoffset * 4;
+
+  height = x_strheight(textMsg) + Yoffset * 2;
+  if (!(buttonFlag & ID_NOTITLE))
+    height += TitleHeight + TextYoffset + Yoffset;
+
+  if (!(buttonFlag & ID_NOBUTTONS))
+    height += ButtonHeight + Yoffset;
+
+  if (buttonFlag & ID_OK)
+  {
+    buttons[OKAY_BUTTON*5+4] = 1;
+    numButtons++;
+  }
+  if (buttonFlag & ID_CANCEL)
+  {
+    buttons[CANCEL_BUTTON*5+4] = 1;
+    numButtons++;
+  }
+  if (buttonFlag & ID_YES)
+  {
+    buttons[YES_BUTTON*5+4] = 1;
+    numButtons++;
+  }
+  if (buttonFlag & ID_NO)
+  {
+    buttons[NO_BUTTON*5+4] = 1;
+    numButtons++;
+  }
+
+  if ((numButtons * (ButtonWidth+2)) + ((numButtons-1) * Xoffset) +
+      (Xoffset * 2) > width)
+    width = (numButtons * ButtonWidth) + ((numButtons-1) * Xoffset) +
+	    (Xoffset * 2);
+
+  // to account for 4 pixel byte boundary
+  width += 4 - (width % 4);
+
+  baseX -= width / 2;
+  baseY -= height / 2;
+
+  deactivateMainButtons();
+
+  x_hide_mouse();
+
+  boxBG = (char *) malloc(width*height+2);
+  x_get_pbm(baseX, baseY, width/4, height, pageOffset, boxBG);
+
+  x_rect_fill(baseX, baseY, baseX+width-1, baseY+height-1,
+	      pageOffset, defaultColors[0]);
+  x_line(baseX, baseY, baseX+width-1, baseY,
+	 defaultColors[1], pageOffset);
+  x_line(baseX, baseY, baseX, baseY+height-1,
+	 defaultColors[1], pageOffset);
+  x_line(baseX, baseY+height-1, baseX+width-1, baseY+height-1,
+	 defaultColors[2], pageOffset);
+  x_line(baseX+width-1, baseY, baseX+width-1, baseY+height-1,
+	 defaultColors[2], pageOffset);
+
+  if (!(buttonFlag & ID_NOTITLE))
+  {
+    x_rect_fill(baseX+Xoffset, baseY+Yoffset,
+		baseX+width-1-Xoffset, baseY+Yoffset+TitleHeight,
+		pageOffset, defaultColors[3]);
+    x_line(baseX+Xoffset, baseY+Yoffset,
+	   baseX+width-1-Xoffset, baseY+Yoffset,
+	   defaultColors[2], pageOffset);
+    x_line(baseX+Xoffset, baseY+Yoffset,
+	   baseX+Xoffset, baseY+Yoffset+TitleHeight,
+	   defaultColors[2], pageOffset);
+    x_line(baseX+Xoffset, baseY+Yoffset+TitleHeight,
+	   baseX+width-1-Xoffset, baseY+Yoffset+TitleHeight,
+	   defaultColors[1], pageOffset);
+    x_line(baseX+width-1-Xoffset, baseY+Yoffset,
+	   baseX+width-1-Xoffset, baseY+Yoffset+TitleHeight,
+	   defaultColors[1], pageOffset);
+
+    stringWidth = x_strlen(titleMsg);
+    x_printf(baseX+(width/2)-(stringWidth/2), baseY+TitleYoffset,
+	     pageOffset, defaultColors[5], titleMsg);
+  } // if
+  else
+  {
+    TitleHeight = 0;
+    TextYoffset = 0;
+  } // else
+
+  stringWidth = x_strlen(textMsg);
+  x_printf(baseX+(width/2)-(stringWidth/2),
+	   baseY+Yoffset+TitleHeight+TextYoffset,
+	   pageOffset, defaultColors[4], textMsg);
+
+  if (!(buttonFlag & ID_NOBUTTONS))
+  {
+    ButtonStart = baseX + (width / 2) -
+		  ((numButtons * (ButtonWidth+2) +
+		   (numButtons-1) * Xoffset) / 2);
+    for (showButtons = 0; showButtons < numButtons; showButtons++)
+    {
+      switch (showButtons)
+      {
+	case 0:
+	  if (buttonFlag & ID_OK)
+	  {
+	    ActiveButton = DLG_OKAY;
+	    AlterButton = OKAY_BUTTON;
+	  } // if
+	  else if (buttonFlag & ID_YES)
+	  {
+	    ActiveButton = DLG_YES;
+	    AlterButton = YES_BUTTON;
+	  } // else
+	  break;
+	case 1:
+	  if (buttonFlag & ID_CANCEL)
+	  {
+	    ActiveButton = DLG_CANCEL;
+	    AlterButton = CANCEL_BUTTON;
+	  } // if
+	  else if (buttonFlag & ID_NO)
+	  {
+	    ActiveButton = DLG_NO;
+	    AlterButton = NO_BUTTON;
+	  } // else
+	  break;
+      } // switch
+
+      buttons[AlterButton*5] = ButtonStart+1;
+      buttons[AlterButton*5+1] = baseY+height-1-Yoffset-ButtonHeight+1;
+      buttons[AlterButton*5+2] = buttons[AlterButton*5] + ButtonWidth - 1;
+      buttons[AlterButton*5+3] = buttons[AlterButton*5+1] + ButtonHeight - 1;
+
+      x_rect_fill(ButtonStart, baseY+height-1-Yoffset-ButtonHeight,
+		  ButtonStart+ButtonWidth-1+3,
+		  baseY+height-1-Yoffset-1+3,pageOffset,0);
+      x_put_pbm(ButtonStart+1, baseY+height-1-Yoffset-ButtonHeight+1,
+		pageOffset, DialogButtons[ActiveButton]);
+
+      ButtonStart += ButtonWidth + 2 + Xoffset;
+
+    } // for
+  } // if
+
+  x_show_mouse();
+
+
+  BUTTON_FOUND = 0;
+
+  while (!return_value)
+  {
+    if (MouseButtonStatus & LEFT_MOUSE_CLICK)
+    {
+      if (buttonFlag & ID_NOBUTTONS)
+	return_value = ID_OK;
+
+      currentButton = 0;
+      while ((!BUTTON_FOUND) && (currentButton != END_OF_BUTTONS))
+      {
+	if ((MouseOnButton(currentButton)) &&
+	    (buttons[currentButton*5+4]))
+	{
+
+	  pushButton(currentButton);
+
+	  if (MouseOnButton(currentButton))     // check if still modal to button
+	  {
+
+	    switch (currentButton)
+	    {
+	      case OKAY_BUTTON:
+		return_value = ID_OK;
+		BUTTON_FOUND = 1;
+		break;
+
+	      case CANCEL_BUTTON:
+		return_value = ID_CANCEL;
+		BUTTON_FOUND = 1;
+		break;
+
+	      case YES_BUTTON:
+		return_value = ID_YES;
+		BUTTON_FOUND = 1;
+		break;
+
+	      case NO_BUTTON:
+		return_value = ID_NO;
+		BUTTON_FOUND = 1;
+		break;
+	    } // switch
+	  } // if
+	} // if
+
+	currentButton++;
+      } // while
+    } // if
+  } // while
+
+  x_hide_mouse();
+
+  x_put_pbm(baseX, baseY, pageOffset, boxBG);
+
+  x_show_mouse();
+
+  deactivateDlgButtons();
+  activateMainButtons();
+
+  if (boxBG)
+    free(boxBG);
+
+  return return_value;
+} // char
+
+void deactivateMainButtons(void)
+{
+  char runButtons = START_MAIN_BUT;
+
+  while ((runButtons < END_OF_MAIN_BUT) &&
+	 (runButtons < END_OF_BUTTONS))
+  {
+    buttons[runButtons*5+4] = 0;
+
+    runButtons++;
+  } // while
+} // deactivateMainButtons
+
+void activateMainButtons(void)
+{
+  char runButtons = START_MAIN_BUT;
+
+  while ((runButtons < END_OF_MAIN_BUT) &&
+	 (runButtons < END_OF_BUTTONS))
+  {
+    buttons[runButtons*5+4] = 1;
+
+    runButtons++;
+  } // while
+} // activateMainButtons
+
+void deactivateDlgButtons(void)
+{
+  char runButtons = START_DLG_BUT;
+
+  while ((runButtons < END_OF_DLG_BUT) &&
+	 (runButtons < END_OF_BUTTONS))
+  {
+    buttons[runButtons*5+4] = 0;
+
+    runButtons++;
+  } // while
+} // deactivateDlgButtons
+
+void activateDlgButtons(void)
+{
+  char runButtons = START_DLG_BUT;
+
+  while ((runButtons < END_OF_DLG_BUT) &&
+	 (runButtons < END_OF_BUTTONS))
+  {
+    buttons[runButtons*5+4] = 1;
+
+    runButtons++;
+  } // while
+} // activateDlgButtons
+
+void showDrawMode(void)
+{
+  x_rect_fill(DM_BASEX, DM_BASEY, DM_MAXX, DM_MAXY, Page0_Offs, DM_BGCOLOR);
+  x_printf(DM_BASEX+((DM_MAXX-DM_BASEX)/2)-
+	   (x_strlen(DrawModes[CurrentDrawMode])/2),
+	   DM_BASEY + 2,
+	   Page0_Offs, DM_FGCOLOR, DrawModes[CurrentDrawMode]);
+} // showDrawMode
+
+void showItemName(void)
+{
+  x_rect_fill(IN_BASEX, IN_BASEY, IN_MAXX, IN_MAXY, Page0_Offs, IN_BGCOLOR);
+  x_printf(IN_BASEX+((IN_MAXX-IN_BASEX)/2)-
+	   (x_strlen(scripts[CurrentPic].picName)/2),
+	   IN_BASEY + 2,
+	   Page0_Offs, IN_FGCOLOR, scripts[CurrentPic].picName);
+} // showItemName
+
+void showMouseCoords(int posX, int posY)
+{
+  char buffer[20];
+
+  sprintf(buffer, "%d, %d", GridBaseX+posX, GridBaseY+posY);
+
+  if (!IN_ACTIVE_AREA)
+    x_hide_mouse();
+
+  x_rect_fill(MC_BASEX, MC_BASEY, MC_MAXX, MC_MAXY, Page0_Offs, MC_BGCOLOR);
+  x_printf(MC_BASEX+2,
+	   MC_BASEY + 2,
+	   Page0_Offs, MC_FGCOLOR, buffer);
+
+  if (!IN_ACTIVE_AREA)
+    x_show_mouse();
+
+} // showMouseCoords
+
+void showCurrentPic(void)
+{
+  char picBuf[4100];
+
+  x_hide_mouse();
+
+  if (UPDATE_PIC_LBM)
+  {
+    showLBM(0, 0, scripts[CurrentPic].picFile, Page1_Offs);
+    UPDATE_PIC_LBM = 0;
+  } // if
+
+  x_get_pbm(scripts[CurrentPic].Xoffset*8,
+	    scripts[CurrentPic].Yoffset*8, 16, 64, Page1_Offs, picBuf);
+  x_put_pbm(PIC_BASEX, PIC_BASEY, Page0_Offs, picBuf);
+
+  x_show_mouse();
+} // showCurrentPic
+
+void handleMouseCursor(void)
+{
+  NewMouseX = MouseX;
+  NewMouseY = MouseY;
+
+
+  if ((FILL_ACTIVE) &&
+     (!(MouseButtonStatus & LEFT_MOUSE_CLICK)))
+  {
+
+    FillAnArea(FillStartX, FillStartY,
+	       (OldMouseX - 4)/TILE_SIZE,
+	       (OldMouseY - 4)/TILE_SIZE);
+    RedrawMap();
+    FILL_ACTIVE = 0;
+//    CurrentCursor = OldCursor;
+
+    if ((NewMouseX < AA_BASEX) || (NewMouseX > AA_MAXX) ||
+	(NewMouseY < AA_BASEY) || (NewMouseY > AA_MAXY))
+      x_hide_mouse();
+    else
+    {
+      x_get_pbm(OldMouseX, OldMouseY, TILE_SIZE/4, TILE_SIZE,
+		Page0_Offs, DrawCursors[0]);
+      x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	DrawCursors[CurrentCursor]);
+    } // else
+
+    if ((NewMouseX < AA_BASEX) || (NewMouseX > AA_MAXX) ||
+	(NewMouseY < AA_BASEY) || (NewMouseY > AA_MAXY))
+      x_show_mouse();
+
+    return;
+  } // if
+
+
+  if ((NewMouseX >= AA_BASEX) && (NewMouseX <= AA_MAXX) &&
+      (NewMouseY >= AA_BASEY) && (NewMouseY <= AA_MAXY))
+  {
+    if (!IN_ACTIVE_AREA)
+    {
+      x_hide_mouse();
+      OldMouseX = 4 + ((NewMouseX-4)/TILE_SIZE)*TILE_SIZE;
+      OldMouseY = 4 + ((NewMouseY-4)/TILE_SIZE)*TILE_SIZE;
+      x_get_pbm(OldMouseX, OldMouseY, TILE_SIZE/4, TILE_SIZE,
+		Page0_Offs, DrawCursors[0]);
+      x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	DrawCursors[CurrentCursor]);
+
+      IN_ACTIVE_AREA = 1;
+    } // if
+  } // if
+  else
+  {
+    if (IN_ACTIVE_AREA)
+    {
+      x_put_pbm(OldMouseX, OldMouseY, Page0_Offs, DrawCursors[0]);
+
+      x_show_mouse();
+      IN_ACTIVE_AREA = 0;
+    } // if
+  } // else
+
+  if (IN_ACTIVE_AREA)
+  {
+    NewMouseX = 4 + ((NewMouseX-4)/TILE_SIZE)*TILE_SIZE;
+    NewMouseY = 4 + ((NewMouseY-4)/TILE_SIZE)*TILE_SIZE;
+
+    if ((NewMouseX != OldMouseX) || (NewMouseY != OldMouseY) ||
+	(MouseButtonStatus & LEFT_MOUSE_CLICK) ||
+	(MouseButtonStatus & RIGHT_MOUSE_CLICK))
+    {
+      if (!(MouseButtonStatus & LEFT_MOUSE_CLICK) &&
+	  !(MouseButtonStatus & RIGHT_MOUSE_CLICK))
+	 showMouseCoords((NewMouseX-4)/TILE_SIZE,(NewMouseY-4)/TILE_SIZE);
+
+      x_put_pbm(OldMouseX, OldMouseY, Page0_Offs, DrawCursors[0]);
+      OldMouseX = NewMouseX;
+      OldMouseY = NewMouseY;
+
+      GRIDX = (OldMouseX - 4)/TILE_SIZE;
+      GRIDY = (OldMouseY - 4)/TILE_SIZE;
+
+      if (MouseButtonStatus & LEFT_MOUSE_CLICK)
+      {
+	if (CurrentCursor == CC_FILL)
+	{
+	  if (FILL_ACTIVE)
+	  {
+	    RedrawMap();
+	    //x_put_pbm(4, 4, Page0_Offs, FillPic);
+	    if ((FillStartX <= GRIDX) && (FillStartY <= GRIDY))
+	    {
+	      x_line(4+FillStartX*TILE_SIZE, 4+FillStartY*TILE_SIZE,
+		     4+GRIDX*TILE_SIZE+TILE_SIZE-1, 4+FillStartY*TILE_SIZE,
+		     255, Page0_Offs);
+	      x_line(4+FillStartX*TILE_SIZE, 4+GRIDY*TILE_SIZE+TILE_SIZE-1,
+		     4+GRIDX*TILE_SIZE+TILE_SIZE-1, 4+GRIDY*TILE_SIZE+TILE_SIZE-1,
+		     255, Page0_Offs);
+	      x_line(4+FillStartX*TILE_SIZE, 4+FillStartY*TILE_SIZE,
+		     4+FillStartX*TILE_SIZE, 4+GRIDY*TILE_SIZE+TILE_SIZE-1,
+		     255, Page0_Offs);
+	      x_line(4+GRIDX*TILE_SIZE+TILE_SIZE-1, 4+FillStartY*TILE_SIZE,
+		     4+GRIDX*TILE_SIZE+TILE_SIZE-1, 4+GRIDY*TILE_SIZE+TILE_SIZE-1,
+		     255, Page0_Offs);
+	    } // if
+
+	  } // if
+	  else
+	  {
+	    FILL_ACTIVE = 1;
+	    FillStartX = GRIDX;
+	    FillStartY = GRIDY;
+	    //FillPic = (char *) malloc(MAP_VIEW_SIZE*TILE_SIZE*TILE_SIZE);
+	    //x_get_pbm(4, 4, (MAP_VIEW_SIZE*TILE_SIZE)/4,
+	    //	      MAP_VIEW_SIZE*TILE_SIZE, Page0_Offs, FillPic);
+	  } // else
+	} // if
+	else
+	{
+	  switch (CurrentCursor)
+	  {
+	    case CC_WESTWALL :
+	      map[WEST_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = CurrentPic-MinPic+1;
+
+	      if (DRAW_FROM_PIC)
+	      {
+		x_get_pbm(PIC_BASEX, PIC_BASEY, TILE_SIZE/4, TILE_SIZE,
+			  Page0_Offs, DrawBuffer);
+		x_rect_fill(0, 0, TILE_SIZE, TILE_SIZE, Page1_Offs, 0);
+		x_put_pbm(0, 0, Page1_Offs, DrawBuffer);
+		x_line(0, 0, TILE_SIZE, 0, 0, Page0_Offs);
+		x_line(0, TILE_SIZE-1, TILE_SIZE, TILE_SIZE-1, 0, Page1_Offs);
+		x_line(0, 0, 0, TILE_SIZE, 0, Page1_Offs);
+		x_line(3, 0, 3, TILE_SIZE, 0, Page1_Offs);
+
+		if (!Pics[TT_WESTWALL][CurrentPic-MinPic][0])
+		{
+		  x_get_pbm(0, 0, 1, TILE_SIZE,
+			    Page1_Offs, Pics[TT_WESTWALL][CurrentPic-MinPic]);
+		} // if
+
+		DrawGridTile(GRIDX, GRIDY);
+	      } // if
+	      else
+		x_line(OldMouseX-1, OldMouseY, OldMouseX, OldMouseY + TILE_SIZE-1,
+		       103, Page0_Offs);
+	      break;
+
+	    case CC_NORTHWALL :
+	      map[NORTH_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = CurrentPic-MinPic+1;
+
+	      if (DRAW_FROM_PIC)
+	      {
+		x_get_pbm(PIC_BASEX, PIC_BASEY, TILE_SIZE/4, 4,
+			  Page0_Offs, DrawBuffer);
+		x_rect_fill(0, 0, TILE_SIZE, TILE_SIZE, Page1_Offs, 0);
+		x_put_pbm(0, 0, Page1_Offs, DrawBuffer);
+		x_line(0, 0, TILE_SIZE, 0, 0, Page1_Offs);
+		x_line(0, 3, TILE_SIZE, 3, 0, Page1_Offs);
+		x_line(0, 0, 0, TILE_SIZE, 0, Page1_Offs);
+		x_line(TILE_SIZE-1, 0, TILE_SIZE-1, TILE_SIZE, 0, Page1_Offs);
+
+		if (!Pics[TT_NORTHWALL][CurrentPic-MinPic][0])
+		{
+		  x_get_pbm(0, 0, TILE_SIZE/4, 4,
+			    Page1_Offs, Pics[TT_NORTHWALL][CurrentPic-MinPic]);
+		} // if
+
+		DrawGridTile(GRIDX, GRIDY);
+	      } // if
+	      else
+	      x_line(OldMouseX + 1, OldMouseY, OldMouseX + 5, OldMouseY,
+		     103, Page0_Offs);
+	      break;
+
+	    case CC_FLAT :
+	      if (CurrentDrawMode == DM_FLOOR)
+		map[FLOOR_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = CurrentPic-MinPic+1;
+	      else
+		map[CEILING_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = CurrentPic-MinPic+1;
+
+	      if (DRAW_FROM_PIC)
+	      {
+	      //	if (!Pics[TT_FLAT][CurrentPic-MinPic][0])
+	      //	{
+	      //	  x_get_pbm(0, 0, TILE_SIZE/4, TILE_SIZE,
+	      //		    Page0_Offs, Pics[TT_FLAT][CurrentPic-MinPic]);
+	      //	} // if
+
+		DrawGridTile(GRIDX, GRIDY);
+	      } // if
+	      else
+		x_rect_fill(OldMouseX + 2, OldMouseY + 2,
+			    OldMouseX + 5, OldMouseY + 5,
+			    Page0_Offs, 103);
+	      break;
+
+	    case CC_ACTOR :
+	      map[SPRITE_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = CurrentPic-MinPic+1;
+
+	      if (DRAW_FROM_PIC)
+	      {
+		DrawGridTile(GRIDX, GRIDY);
+	      } // if
+
+	      break;
+	  } // if
+	} // else
+      } // if
+      else if (MouseButtonStatus & RIGHT_MOUSE_CLICK)
+      {
+	switch (CurrentCursor)
+	{
+	  case CC_WESTWALL :
+	    map[WEST_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = 0;
+
+	    DrawGridTile(GRIDX, GRIDY);
+	    break;
+
+	  case CC_NORTHWALL :
+	    map[NORTH_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = 0;
+
+	    DrawGridTile(GRIDX, GRIDY);
+	    break;
+
+	  case CC_FLAT :
+	    if (CurrentDrawMode == DM_FLOOR)
+	      map[FLOOR_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = 0;
+	    else
+	      map[CEILING_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = 0;
+
+	    DrawGridTile(GRIDX, GRIDY);
+	    break;
+
+	    case CC_ACTOR :
+	      map[SPRITE_LAYER][(GridBaseY+GRIDY)*MAP_SIZE + (GridBaseX+GRIDX)] = 0;
+
+	      if (DRAW_FROM_PIC)
+	      {
+		DrawGridTile(GRIDX, GRIDY);
+	      } // if
+
+	      break;
+	} // if
+      } // if
+      else
+      {
+	if (FILL_ACTIVE)
+	{
+	  //x_put_pbm(4, 4, Page0_Offs, FillPic);
+	  //free(FillPic);
+	  //FillPic = NULL;
+	  //RedrawMap();
+	  //FILL_ACTIVE = 0;
+	  //CurrentCursor = OldCursor;
+	} // if
+      } // else
+
+
+      x_get_pbm(OldMouseX, OldMouseY, TILE_SIZE/4, TILE_SIZE, Page0_Offs, DrawCursors[0]);
+
+      x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	DrawCursors[CurrentCursor]);
+    } // if
+  } // if
+} // handleMouseCursor
+
+void DrawGridTile(char xpos, char ypos)
+{
+  char TileBuffer[146];
+
+  x_rect_fill(0, 0, TILE_SIZE, TILE_SIZE, Page1_Offs, 0);
+  x_put_pix(0, 0, Page1_Offs, GRID_MARK_COLOR);
+
+  if (map[FLOOR_LAYER][(GridBaseY+ypos)*MAP_SIZE+(GridBaseX+xpos)])
+  {
+    x_put_pbm(0, 0, Page1_Offs,
+	      Pics[TT_FLAT][map[FLOOR_LAYER][(GridBaseY+ypos)*MAP_SIZE+(GridBaseX+xpos)]-1]);
+  } // if
+  if (map[WEST_LAYER][(GridBaseY+ypos)*MAP_SIZE+(GridBaseX+xpos)])
+  {
+    x_put_pbm(0, 0, Page1_Offs,
+	      Pics[TT_WESTWALL][map[WEST_LAYER][(GridBaseY+ypos)*MAP_SIZE+(GridBaseX+xpos)]-1]);
+  } // if
+  if (map[NORTH_LAYER][(GridBaseY+ypos)*MAP_SIZE+(GridBaseX+xpos)])
+  {
+    x_put_pbm(0, 0, Page1_Offs,
+	      Pics[TT_NORTHWALL][map[NORTH_LAYER][(GridBaseY+ypos)*MAP_SIZE+(GridBaseX+xpos)]-1]);
+  } // if
+  if (map[SPRITE_LAYER][(GridBaseY+ypos)*MAP_SIZE+(GridBaseX+xpos)])
+  {
+    x_put_masked_pbm(0, 0, Page1_Offs,
+	      Pics[TT_ACTOR][map[SPRITE_LAYER][(GridBaseY+ypos)*MAP_SIZE+(GridBaseX+xpos)]-1]);
+  } // if
+
+  x_get_pbm(0, 0, TILE_SIZE/4, TILE_SIZE, Page1_Offs, TileBuffer);
+
+  x_put_pbm(4+xpos*TILE_SIZE, 4+ypos*TILE_SIZE, Page0_Offs, TileBuffer);
+
+} // DrawGridTile
+
+void RedrawMap(void)
+{
+  char row;
+  char col;
+
+
+  if (CurrentCursor != CC_FILL)
+  {
+    if (IN_ACTIVE_AREA)
+      x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,DrawCursors[0]);
+    else
+      x_hide_mouse();
+  } // if
+
+  for (row = 0; row < MAP_VIEW_SIZE; row++)
+  {
+    for (col = 0; col < MAP_VIEW_SIZE; col++)
+    {
+      DrawGridTile(col, row);
+    } // for
+  } // for
+
+  if (CurrentCursor != CC_FILL)
+  {
+    if (IN_ACTIVE_AREA)
+      x_put_masked_pbm(OldMouseX, OldMouseY, Page0_Offs,
+	DrawCursors[CurrentCursor]);
+    else
+      x_show_mouse();
+  } // if
+} // RedrawMap
+
+void RedrawCol(char whichCol)
+{
+  char row;
+
+  for (row = 0; row < MAP_VIEW_SIZE; row++)
+  {
+    DrawGridTile(whichCol, row);
+  } // for
+} // RedrawRow
+
+void RedrawRow(char whichRow)
+{
+  char col;
+
+  for (col = 0; col < MAP_VIEW_SIZE; col++)
+  {
+    DrawGridTile(col, whichRow);
+  } // for
+} // RedrawRow
+
+int SaveMapToFile(char *filename)
+{
+  int MapFile;
+
+  if ((MapFile = f_open(filename, F_RDWR)) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[FLOOR_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[CEILING_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[NORTH_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[WEST_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[SPRITE_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_close(MapFile) == FILE_ERR)
+    return 0;
+
+  MessageBox(160, 100, Page0_Offs, "New saved okay.", "", ID_OK | ID_NOTITLE);
+
+  return 1;
+} // SaveMapToFile
+
+int SaveMapToTOD(void)
+{
+  int MapFile;
+
+  if ((MapFile = f_open(DATA_FILE, F_RDWR)) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0x3E0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[FLOOR_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0x4E0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[CEILING_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0x5E0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[NORTH_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0x6E0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[WEST_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0xCE0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_write(MapFile, map[SPRITE_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_close(MapFile) == FILE_ERR)
+    return 0;
+
+  MessageBox(160, 100, Page0_Offs, "New map inserted okay.", "", ID_OK | ID_NOTITLE);
+
+  return 1;
+} // SaveMapToTOD
+
+int LoadMapFromFile(char *filename)
+{
+  int MapFile;
+  long numRead;
+
+  if ((MapFile = f_open(filename, F_RDWR)) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[FLOOR_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[CEILING_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[NORTH_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[WEST_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[SPRITE_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_close(MapFile) == FILE_ERR)
+    return 0;
+
+  MessageBox(160, 100, Page0_Offs, "Old map loaded okay.", "", ID_OK | ID_NOTITLE);
+
+  return 1;
+} // LoadMapFromFile
+
+int LoadMapFromTOD(void)
+{
+  int MapFile;
+  long numRead;
+
+  if ((MapFile = f_open(DATA_FILE, F_RDWR)) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0x3E0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[FLOOR_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0x4E0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[CEILING_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0x5E0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[NORTH_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0x6E0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[WEST_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_seek(MapFile, 0xCE0A, SEEK_START) == FILE_ERR)
+    return 0;
+
+  if (f_read(MapFile, map[SPRITE_LAYER], MAP_SIZE*MAP_SIZE) == FILE_ERR)
+    return 0;
+
+  if (f_close(MapFile) == FILE_ERR)
+    return 0;
+
+  MessageBox(160, 100, Page0_Offs, "Old map extracted okay.", "", ID_OK | ID_NOTITLE);
+
+  return 1;
+} // LoadMapFromTOD
+
+void ScaleTiles()
+{
+  char i;
+  char j;
+  WORD color;
+  char scaleX = TILE_SIZE;
+  char scaleY = TILE_SIZE;
+  char picToScale = 0;
+
+
+
+  scaleX = 4;
+  scaleY = TILE_SIZE;
+
+  picToScale = StartWallPic;
+
+  while (picToScale <= MaxWallPic)
+  {
+    if ((picToScale == StartWallPic) ||
+	(strcmpi(scripts[picToScale].picFile, scripts[picToScale-1].picFile)))
+      showLBM(0, 0, scripts[picToScale].picFile, Page0_Offs);
+
+    x_rect_fill(0, 0, TILE_SIZE, TILE_SIZE, Page0_Offs, 0);
+
+    for (i=0; i<scaleX; i++)
+      for (j=0; j<scaleY; j++)
+      {
+	color = x_get_pix(scripts[picToScale].Xoffset*8 +
+			  (((float)i/(scaleX-1))*63),
+			  scripts[picToScale].Yoffset*8 +
+			  (((float)j/(scaleY-1))*63),
+			  Page0_Offs);
+	x_put_pix(i, j, Page0_Offs, color);
+      } // for
+
+    x_line(0, 0, TILE_SIZE, 0, 0, Page0_Offs);
+    x_line(0, TILE_SIZE-1, TILE_SIZE, TILE_SIZE-1, 0, Page0_Offs);
+    x_line(0, 0, 0, TILE_SIZE, 0, Page0_Offs);
+    x_line(3, 0, 3, TILE_SIZE, 0, Page0_Offs);
+
+    x_get_pbm(0, 0, 1, TILE_SIZE,
+	      Page0_Offs, Pics[TT_WESTWALL][picToScale-StartWallPic]);
+
+    picToScale ++;        
+  } // while
+
+  scaleX = TILE_SIZE;
+  scaleY = 4;
+
+  picToScale = StartWallPic;
+
+  while (picToScale <= MaxWallPic)
+  {
+    if ((picToScale == StartWallPic) ||
+	(strcmpi(scripts[picToScale].picFile, scripts[picToScale-1].picFile)))
+      showLBM(0, 0, scripts[picToScale].picFile, Page0_Offs);
+
+    x_rect_fill(0, 0, TILE_SIZE, TILE_SIZE, Page0_Offs, 0);
+
+    for (i=0; i<scaleX; i++)
+      for (j=0; j<scaleY; j++)
+      {
+	color = x_get_pix(scripts[picToScale].Xoffset*8 +
+			  (((float)i/(scaleX-1))*63),
+			  scripts[picToScale].Yoffset*8 +
+			  (((float)j/(scaleY-1))*63),
+			  Page0_Offs);
+	x_put_pix(i, j, Page0_Offs, color);
+      } // for
+
+    x_line(0, 0, TILE_SIZE, 0, 0, Page0_Offs);
+    x_line(0, 3, TILE_SIZE, 3, 0, Page0_Offs);
+    x_line(0, 0, 0, TILE_SIZE, 0, Page0_Offs);
+    x_line(TILE_SIZE-1, 0, TILE_SIZE-1, TILE_SIZE, 0, Page0_Offs);
+
+    x_get_pbm(0, 0, 3, 4,
+	      Page0_Offs, Pics[TT_NORTHWALL][picToScale-StartWallPic]);
+
+    picToScale ++;
+  } // while
+
+  scaleX = TILE_SIZE;
+  scaleY = TILE_SIZE;
+
+  picToScale = StartFlatPic;
+
+  while (picToScale <= MaxFlatPic)
+  {
+    if ((picToScale == StartFlatPic) ||
+	(strcmpi(scripts[picToScale].picFile, scripts[picToScale-1].picFile)))
+      showLBM(0, 0, scripts[picToScale].picFile, Page0_Offs);
+
+    x_rect_fill(0, 0, TILE_SIZE, TILE_SIZE, Page0_Offs, 0);
+
+    for (i=0; i<scaleX; i++)
+      for (j=0; j<scaleY; j++)
+      {
+	color = x_get_pix(scripts[picToScale].Xoffset*8 +
+			  (((float)i/(scaleX-1))*63),
+			  scripts[picToScale].Yoffset*8 +
+			  (((float)j/(scaleY-1))*63),
+			  Page0_Offs);
+	x_put_pix(i, j, Page0_Offs, color);
+      } // for
+
+    x_get_pbm(0, 0, 3, TILE_SIZE,
+	      Page0_Offs, Pics[TT_FLAT][picToScale-StartFlatPic]);
+
+    picToScale ++;
+  } // while
+
+  scaleX = TILE_SIZE;
+  scaleY = TILE_SIZE;
+
+  picToScale = StartActorPic;
+
+  while (picToScale <= MaxActorPic)
+  {
+    if ((picToScale == StartActorPic) ||
+	(strcmpi(scripts[picToScale].picFile, scripts[picToScale-1].picFile)))
+      showLBM(0, 0, scripts[picToScale].picFile, Page0_Offs);
+
+    x_rect_fill(0, 0, TILE_SIZE, TILE_SIZE, Page0_Offs, 0);
+
+    for (i=0; i<scaleX; i++)
+      for (j=0; j<scaleY; j++)
+      {
+	color = x_get_pix(scripts[picToScale].Xoffset*8 +
+			  (((float)i/(scaleX-1))*63),
+			  scripts[picToScale].Yoffset*8 +
+			  (((float)j/(scaleY-1))*63),
+			  Page0_Offs);
+	x_put_pix(i, j, Page0_Offs, color);
+      } // for
+
+    x_get_pbm(0, 0, 3, TILE_SIZE,
+	      Page0_Offs, Pics[TT_ACTOR][picToScale-StartActorPic]);
+
+    picToScale ++;
+  } // while
+
+} // ScaleTiles
+
+void FillAnArea(char baseX, char baseY, char endX, char endY)
+{
+  char i;
+  char j;
+
+  for (i = baseX; i < endX+1; i++)
+    for (j = baseY; j < endY+1; j++)
+      switch (CurrentDrawMode)
+      {
+	case DM_WESTWALL :
+	  map[WEST_LAYER][(GridBaseY+j)*MAP_SIZE + (GridBaseX+i)] =
+	    CurrentPic-MinPic+1;
+	  break;
+
+	case DM_NORTHWALL :
+	  map[NORTH_LAYER][(GridBaseY+j)*MAP_SIZE + (GridBaseX+i)] =
+	    CurrentPic-MinPic+1;
+	  break;
+
+	case DM_FLOOR :
+	  map[FLOOR_LAYER][(GridBaseY+j)*MAP_SIZE + (GridBaseX+i)] =
+	    CurrentPic-MinPic+1;
+	  break;
+
+	case DM_CEILING :
+	  map[CEILING_LAYER][(GridBaseY+j)*MAP_SIZE + (GridBaseX+i)] =
+	    CurrentPic-MinPic+1;
+	  break;
+
+	case DM_SPRITE :
+	  map[SPRITE_LAYER][(GridBaseY+j)*MAP_SIZE + (GridBaseX+i)] =
+	    CurrentPic-MinPic+1;
+	  break;
+      } // switch
+} // FillAnArea

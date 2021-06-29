@@ -1,0 +1,54 @@
+There's a nasty bug in FlowView in R_Render.c.
+
+Here's the modified version that was used in Greed:
+
+void FlowView()
+{
+ entry_t *process_p, *nextprocess_p;
+
+ process_p=entries;
+ process_p->tilex=viewtilex;
+ process_p->tiley=viewtiley;
+ process_p->mapspot=(viewtiley<<6)+viewtilex;
+ process_p->xmin=0;
+ process_p->xmax=windowWidth-1;
+ entry_p=process_p+1;
+ memset(entrycount,0,MAPCOLS*MAPROWS*4);
+ entrycounter=1;
+ while (process_p<entry_p)
+  {
+   if (process_p->mapspot==-1) // entry has been merged
+    {
+     process_p++;
+     continue;
+     }
+
+    /* check for mergeable entries */
+   if (entrycount[process_p->mapspot]>process_p->counter) // mergeable tile
+    for (nextprocess_p=process_p+1;nextprocess_p<entry_p;nextprocess_p++) // scan for mergeable entries
+     if (nextprocess_p->mapspot==process_p->mapspot)
+      {
+       if (nextprocess_p->xmin==process_p->xmax+1) process_p->xmax=nextprocess_p->xmax;
+       else if (nextprocess_p->xmax==process_p->xmin-1) process_p->xmin=nextprocess_p->xmin;
+       else // bad merge!
+    MS_Error("Bad tile event combination:\n"
+         " nextprocess_p=%d process_p=%d\n"
+         " nextprocess_p->xmin=%d  nextprocess_p->xmax=%d\n"
+         " process_p->xmin=%d  process_p->xmax=%d\n",
+         (int)nextprocess_p,(int)process_p,
+         nextprocess_p->xmin,nextprocess_p->xmax,
+         process_p->xmin,process_p->xmax);
+       entrycount[nextprocess_p->mapspot]=0;
+       nextprocess_p->mapspot=-1;
+       }
+
+     /* check for a dublicate entry */
+   if (entrymap[process_p->mapspot]==frameon) goto end;
+
+   entrymap[process_p->mapspot]=frameon;
+   RenderTileWalls(process_p);
+   RenderTileEnds();
+end:
+   process_p++;
+   }
+ }

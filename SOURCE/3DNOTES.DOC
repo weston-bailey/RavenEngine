@@ -1,0 +1,56 @@
+Steps to producing a picture on the screen from all the values in soft3d
+
+FRACUNIT => a constant that is 1.0 in fixed point
+
+
+Player starts out at:
+  playerx = (3 * 64 + 32) * FRACUNIT;
+  playery = (3 * 64 + 32) * FRACUNIT;
+  playerz = 32 * FRACUNIT;
+  playerangle = 0;
+
+
+The interrupt does the reading of controls and controlling movement.
+The play loop itself does nothing but Render the view and shoot the rendered
+drawing to the screen.
+
+Movement:
+  Pg/Up & Dn change playerz by FRACUNIT
+  Home sets playerz to 32.0
+
+  For translation movement:
+  Up and Down -
+    Checks to see if the move can be made then increments the players position
+    by a set amount.
+
+    playerx and playery are updated depending upon angle of movement and
+    if the operation succeeds.  In this case if you did not run into a wall.
+
+  Left and Right -
+    Changes the playerangle by PLAYERTURNSPEED; in this case 1 degree(?)
+
+
+
+View Rendering :
+
+This is done with a call to RF_RenderView int R_PUBLIC.C sending player
+position and angle.
+
+This sets the global varibles viewx, viewy, viewz by stripping off most
+of the lowest nibbles of the fixed point numbers.  viewangle is set to
+playerangle.
+
+SetupFrame is then called:
+View buffer is cleared
+wallz array is set to MAXZ + 1 ((6 shl 22) + 1)
+mapcache_height contents are set to 0xF0
+numspans is set to 0
+frameon is incremented(?)
+viewtilex and viewtiley are set to the respective x and y values shifted
+by 22(?)
+
+viewfineangle is set by shifting viewangle by 5
+Initializes backvertex;
+
+
+

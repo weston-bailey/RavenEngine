@@ -1,0 +1,43 @@
+This file is provided for a quick reference to some of the functionality and
+future functionality of this 3D engine.
+
+Keyboard Commands
+=================
+
+   ESC - exit the demo
+   CURSOR UP - move forwards
+   CURSOR DOWN - move backwards
+   CURSOR LEFT - turn counter-clockwise
+   CURSOR RIGHT - turn clockwise
+   INSERT - increase size of screen
+   DELETE - decrease size of screen
+   PGUP - move up y-axis
+   PGDN - move down y-axis
+
+Right now, the engine supports a bi-quadrilateral projection scheme (ala 
+Wolfenstien) but with some noteable exceptions:
+
+  First, the engine supports lighting in the form of distance shading
+  (i.e. it get darker the farther away one goes in the z direction) for 
+  an added effect of depth.  In the future, we will add localize lighting
+  so that certain rooms can be darker than others and a torch can light up
+  the surrounding areas (ala Doom).
+
+  Second, we have the ability to move along the y-axis and can create the
+  effect of bobbing up and down as we walk, jumping, falling down, etc.
+
+  Third, our floors and ceilings are texture-mapped adding even more to the
+  visual detail.  We will probably put in some detail options including 
+  shutting off floor and ceiling texturing to support slower machines.  We
+  can even shut off the ceiling and provide and scrolling skyline.
+
+  Fourth, the engine suppors 8 rotation views for any object or sprite
+  (ala Doom).
+
+  Lastly, (not shown in demo) our ceiling and floor tile suppor morphing for
+  realistic contours.  In simpler terms, we can make some ceilings higher 
+  than others and the adjacent tiles will stretch and morph to make a smooth
+  transitional surface.  We can thus create cavernous rooms with huge 
+  monsters.
+
+  

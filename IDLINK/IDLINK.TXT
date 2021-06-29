@@ -1,0 +1,41 @@
+
+IDLINK DOCUMENTATION
+--------------------
+
+idlink [-b] [-source path] [-dest path] [-script scriptfile]
+
+-b		Force a full rebuild of the file, rather than a file
+		bulking partial update
+
+-source path	To place the source for the files in another directory
+
+-dest path		To place the linked file in another directory
+
+-script file	The script name defaults to LINKFILE.ILN if not specified
+
+
+
+Script file format:
+
+; Comments can be uses at the beginning of a line, or after a command's parms
+; whitespace can be introduced anywhere, but a command cannot cross lines
+outputfilename			; must be the first token of the file
+
+filename	[labelname]	; adds filename to the data file, possibly with label
+$OPENCOMP	filename	; opens a composite data file.  Filenames after this
+						; are assumed to be in the composit file
+$CLOSECOMP				; Closes the open composite file.  Files after this
+						; are assumed to be seperate files.  You can issue
+						; multiple $OPENCOMPs without $CLOSECOMP
+LABEL		labelname	; inserts a label on an empty lump
+
+
+Idlink generates the output linked file, and a file with the same base and
+a content file with a .ICN (Id CoNtent file) extension.  This file holds the
+pathnames and composite files for each of the lumps.  This allows the partial
+linking to find the correct data even if you rearrange the link script.  You
+can delete this file whenever you want, it will just force a full rebuild.
+
+During a partial link, if a lump has grown it will be added on to the end of
+the file, leaving wasted space behind.  You should periodically use the -B
+option to force a rebuild from scratch.

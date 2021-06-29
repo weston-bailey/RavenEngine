@@ -1,0 +1,29 @@
+EXE     = todd3d
+
+AFLAGS  = /mx
+CFLAGS  = /g /t /d2 /O3 /znoansi
+LFLAGS  = /g /t
+
+OBJS    = todd3d.obj \
+          r_public.obj \
+          r_spans.obj \
+          r_conten.obj \
+          r_plane.obj \
+          r_render.obj \
+          r_walls.obj \
+          ra_draw.obj \
+          blitbuf.obj \
+          d_disk.obj \
+          d_ints.obj \
+          d_misc.obj \
+          d_video.obj
+
+
+$(EXE): $(OBJS)
+ $(CC) $(LFLAGS) /m /e $(EXE) *.obj mouse.lib
+
+.c.obj:
+ $(CC) /c $(CFLAGS) /o $(.TARGET) $(.NEWER)
+
+.asm.obj:
+ tasm $(AFLAGS) $(.NEWER),$(.TARGET)

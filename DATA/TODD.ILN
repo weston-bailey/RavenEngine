@@ -1,0 +1,62 @@
+
+soft3d.dat
+
+palette.dat     palette
+lights.dat      lights
+
+$OPENCOMP       map
+map1.dat        map
+map2.dat
+map3.dat
+map4.dat
+map5.dat
+map6.dat
+map7.dat
+map8.dat
+map9.dat
+
+$OPENCOMP       playscr
+toddscr.dat     playscreen
+
+$OPENCOMP       font1
+font1.dat       font
+
+;===============
+; rendering data
+;===============
+
+; sprites
+LABEL                   startsprites
+
+$OPENCOMP       nazi
+nazi_1.dat              nazi
+nazi_2.dat
+nazi_3.dat
+nazi_4.dat
+nazi_5.dat
+nazi_6.dat
+nazi_7.dat
+nazi_8.dat
+
+LABEL                   endsprites
+
+
+; flat floors / ceilings
+LABEL                   startflats
+$OPENCOMP       flats1
+f1_1.dat                        ; Stone ceiling
+f1_2.dat                        ; wood floor
+LABEL                   endflats
+
+
+; walls
+LABEL                   startwalls
+$OPENCOMP       walls1
+w1_1.dat                        ; green brick
+w1_2.dat                        ; wood slats
+
+; doors (doors are the same data as walls)
+$OPENCOMP       doors1
+door1.dat                               wolfdoor
+
+LABEL                   endwalls
